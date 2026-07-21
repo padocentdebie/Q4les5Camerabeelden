@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Politie Academie - OVT & PV Camerabeelden</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- LOGIN --- */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1c2b4b;
+            height: 100vh;
+            width: 100%;
+            position: absolute;
+            z-index: 3000;
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .login-box h2 {
+            color: #003082;
+            margin-bottom: 15px;
+        }
+        .login-box input,
+        .login-box select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #003082;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .login-box button:hover {
+            background: #002060;
+        }
+
+        /* --- MAIN --- */
+        #main-content {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #main-content.active {
+            display: flex;
+        }
+
+        #header {
+            background: #003082;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 3px solid #d4af37;
+        }
+        #header h1 {
+            font-size: 1.2em;
+        }
+        #header .user-info {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        #clock {
+            font-size: 1.1em;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 15px;
+            border-radius: 20px;
+            border: 1px solid #d4af37;
+        }
+
+        /* --- NAVIGATIE --- */
+        #nav-tabs {
+            display: flex;
+            background: #e8eaed;
+            border-bottom: 2px solid #ccc;
+            flex-shrink: 0;
+        }
+        #nav-tabs button {
+            flex: 1;
+            padding: 12px 10px;
+            border: none;
+            background: transparent;
+            font-weight: bold;
+            font-size: 0.95em;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+        #nav-tabs button:hover {
+            background: rgba(0, 48, 130, 0.05);
+        }
+        #nav-tabs button.active {
+            border-bottom-color: #003082;
+            color: #003082;
+            background: white;
+        }
+
+        /* --- TAB CONTENT --- */
+        .tab-content {
+            flex: 1;
+            display: none;
+            overflow: hidden;
+        }
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- OVT TAB --- */
+        #ovt-content {
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+            flex: 1;
+        }
+        #ovt-content .orig-text {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #003082;
+            margin-bottom: 15px;
+            font-style: italic;
+            line-height: 1.6;
+        }
+        #ovt-content .orig-text strong {
+            color: #003082;
+        }
+        #ovt-content textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 180px;
+        }
+        #ovt-content textarea:focus {
+            border-color: #003082;
+            outline: none;
+        }
+        .status-msg {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.95em;
+            display: none;
+        }
+        .status-msg.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        .status-msg.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .btn-action {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .btn-primary {
+            background: #003082;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #002060;
+        }
+        .btn-success {
+            background: #2e7d32;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1b5e20;
+        }
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #555;
+        }
+        .btn-danger {
+            background: #c62828;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #e68900;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* --- CAMERABEELDEN TAB --- */
+        #camera-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+        #camera-content #video-section {
+            flex: 0 0 auto;
+            background: #000;
+            position: relative;
+        }
+        #camera-content #video-section iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+        }
+        #camera-content #video-overlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            pointer-events: none;
+        }
+        #camera-content #camera-body {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+        #camera-content #camera-form {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+        }
+        #camera-content #camera-feed {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-left: 2px solid #ddd;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #003082;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .form-row .form-group {
+            flex: 1;
+            min-width: 120px;
+        }
+        .feed-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #003082;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .feed-item .meta {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .feed-item .details {
+            font-size: 0.95em;
+        }
+        .feed-item .details strong {
+            color: #003082;
+        }
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            #camera-content #camera-body {
+                flex-direction: column;
+            }
+            #camera-content #camera-feed {
+                border-left: none;
+                border-top: 2px solid #ddd;
+                flex: 0 0 40vh;
+            }
+            #camera-content #video-section iframe {
+                height: 200px;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>📚 Politie Academie</h2>
+            <input type="text" id="studentName" placeholder="Naam...">
+            <select id="classSelect">
+                <option value="" disabled selected>Kies een klas...</option>
+                <option value="Alpha">Alpha</option>
+                <option value="Bravo">Bravo</option>
+                <option value="Charlie">Charlie</option>
+                <option value="Delta">Delta</option>
+                <option value="Echo">Echo</option>
+                <option value="Foxtrot">Foxtrot</option>
+                <option value="Golf">Golf</option>
+                <option value="Hotel">Hotel</option>
+                <option value="Juliet">Juliet</option>
+                <option value="Kilo">Kilo</option>
+                <option value="Lima">Lima</option>
+                <option value="Mike">Mike</option>
+            </select>
+            <button onclick="login()">Start</button>
+        </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div id="main-content">
+        <!-- HEADER -->
+        <div id="header">
+            <div>
+                <h1>📚 Politie Academie</h1>
+                <span class="user-info" id="userDisplay"></span>
+            </div>
+            <div id="clock">--:--:--</div>
+        </div>
+
+        <!-- NAVIGATIE -->
+        <div id="nav-tabs">
+            <button class="active" data-tab="ovt" onclick="switchTab('ovt')">📝 OVT Herschrijven</button>
+            <button data-tab="camera" onclick="switchTab('camera')">📹 PV Camerabeelden</button>
+        </div>
+
+        <!-- ===== TAB 1: OVT HERSCHRIJVEN ===== -->
+        <div id="tab-ovt" class="tab-content active">
+            <div id="ovt-content">
+                <h2 style="color:#003082;">Zet de tekst in de <span style="color:#2e7d32;">Onvoltooid Verleden Tijd (OVT)</span></h2>
+                <p style="color:#666; margin-bottom:10px;"><strong>Let op:</strong> Gebruik <strong>geen</strong> voltooid verleden tijd (VVT). Gebruik de stam + -te/-de of klankverandering.</p>
+
+                <div class="orig-text">
+                    <strong>Originele tekst (VVT):</strong><br>
+                    "Ik, Jaap Doorziet, ben samen met mijn collega's die kant op gefietst en heb samen met mijn collega's uitgekeken naar de verdachten. Omstreeks 14:07 uur zag ik de mogelijke verdachten lopen. Ik ben er, samen met mijn collega's, naartoe gefietst. Ik hoorde mijn collega Henk Tank zeggen dat ze moeten blijven staan. Ik ben naar de vrouw toegelopen. Ik heb gezegd dat ze mag blijven staan en dat ik een identiteitsbewijs wilde zien."
+                </div>
+
+                <div id="ovtStatus" class="status-msg"></div>
+
+                <textarea id="ovtAntwoord" placeholder="Schrijf hier de herschreven tekst in de OVT..."></textarea>
+
+                <div class="button-group">
+                    <button class="btn-action btn-success" onclick="ovtOpslaan()">💾 Opslaan</button>
+                    <button class="btn-action btn-warning" onclick="ovtControleer()">🔍 Controleer op VVT</button>
+                    <button class="btn-action btn-secondary" onclick="ovtWisAntwoord()">🧹 Wis mijn antwoord</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB 2: PV CAMERABEELDEN ===== -->
+        <div id="tab-camera" class="tab-content">
+            <div id="camera-content">
+                <div id="video-section">
+                    <iframe src="https://www.youtube.com/embed/KwTh0TgD3Rw" allowfullscreen></iframe>
+                    <div id="video-overlay">📹 Live camerabeeld</div>
+                </div>
+                <div id="camera-body">
+                    <div id="camera-form">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+                            <h2 style="color:#003082;">PV-bevindingen</h2>
+                            <button id="startBtn" class="btn-action btn-success" onclick="cameraStart()">▶️ Start opname</button>
+                        </div>
+                        <div id="cameraStatus" style="margin-bottom:10px; color:#666; font-style:italic;">Klik op "Start opname" om de tijd vast te leggen.</div>
+                        <form id="pvForm" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Kleur</label><input type="text" id="kleur" placeholder="bijv. zwart, grijs"></div>
+                                <div class="form-group"><label>Materiaal</label><input type="text" id="materiaal" placeholder="bijv. metaal, kunststof"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label>Vorm</label><input type="text" id="vorm" placeholder="bijv. pistool, revolver"></div>
+                                <div class="form-group"><label>Loop</label><input type="text" id="loop" placeholder="lengte, dikte, etc."></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label>Magazijn</label><input type="text" id="magazijn" placeholder="aanwezig? kleur?"></div>
+                                <div class="form-group"><label>Kolf</label><input type="text" id="kolf" placeholder="materiaal, kleur"></div>
+                            </div>
+                            <div class="form-group"><label>Extra opmerkingen</label><textarea id="opmerkingen" placeholder="Beschrijf bijzonderheden..."></textarea></div>
+                            <button type="button" class="btn-action btn-primary" onclick="cameraOpslaan()">💾 PV opslaan</button>
+                        </form>
+                    </div>
+                    <div id="camera-feed">
+                        <div class="feed-header">
+                            <h3 style="color:#003082;">📋 Eerdere PV's</h3>
+                            <button class="btn-action btn-danger" onclick="cameraDeleteAll()">🗑️ Verwijder alle</button>
+                        </div>
+                        <div id="cameraFeedContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FIREBASE ===== -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+                "firebase/database": "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getDatabase, ref, onValue, set, remove, push } from "firebase/database";
+
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJ5of6K5MRFXMOiEqEyZxZbs1xoJtXuN8",
+            authDomain: "pvaangifteinleveren.firebaseapp.com",
+            databaseURL: "https://pvaangifteinleveren-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "pvaangifteinleveren",
+            storageBucket: "pvaangifteinleveren.firebasestorage.app",
+            messagingSenderId: "989190242332",
+            appId: "1:989190242332:web:40bb7c408441c707835fd9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- GLOBALE VARIABELEN ---
+        window.currentClass = "";
+        window.userName = "";
+        window.cameraStartTime = null;
+        window.cameraInzendingKey = null;
+
+        // --- DOM ---
+        const loginScreen = document.getElementById('login-screen');
+        const mainContent = document.getElementById('main-content');
+        const userDisplay = document.getElementById('userDisplay');
+        const clockEl = document.getElementById('clock');
+
+        // OVT
+        const ovtStatus = document.getElementById('ovtStatus');
+        const ovtTextarea = document.getElementById('ovtAntwoord');
+
+        // Camera
+        const cameraStatus = document.getElementById('cameraStatus');
+        const pvForm = document.getElementById('pvForm');
+        const startBtn = document.getElementById('startBtn');
+        const cameraFeedContainer = document.getElementById('cameraFeedContainer');
+
+        // --- KLOK ---
+        function startKlok() {
+            updateKlok();
+            setInterval(updateKlok, 1000);
+        }
+
+        function updateKlok() {
+            const now = new Date();
+            const datum = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const tijd = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            clockEl.textContent = `${datum} ${tijd}`;
+        }
+
+        // --- LOGIN ---
+        window.login = function() {
+            const klas = document.getElementById('classSelect').value;
+            if (!klas) return alert("Selecteer een klas!");
+            const naam = document.getElementById('studentName').value.trim() || "Anoniem";
+            window.currentClass = klas;
+            window.userName = naam;
+            userDisplay.textContent = `👤 ${naam} (${klas})`;
+            loginScreen.style.display = 'none';
+            mainContent.classList.add('active');
+            startKlok();
+            // Start alle listeners
+            ovtLaadFeed();
+            cameraLaadFeed();
+        };
+
+        // --- TAB SWITCH ---
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#nav-tabs button').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.querySelector(`#nav-tabs button[data-tab="${tab}"]`).classList.add('active');
+        };
+
+        // ============================================================
+        // ===== OVT HERSCHRIJVEN =====
+        // ============================================================
+
+        window.ovtOpslaan = function() {
+            const tekst = ovtTextarea.value.trim();
+            if (!tekst) {
+                ovtToonStatus('Voer eerst een antwoord in.', 'error');
+                return;
+            }
+            set(ref(db, `classes/${window.currentClass}/ovt-herschrijven/${window.userName}`), {
+                tekst: tekst,
+                timestamp: new Date().toISOString()
+            }).then(() => {
+                ovtToonStatus('✅ Antwoord opgeslagen!', 'success');
+                ovtTextarea.value = '';
+            }).catch(err => ovtToonStatus('Fout: ' + err.message, 'error'));
+        };
+
+        window.ovtControleer = function() {
+            const tekst = ovtTextarea.value.trim();
+            if (!tekst) {
+                ovtToonStatus('Schrijf eerst je antwoord.', 'error');
+                return;
+            }
+            const vvtWoorden = ['heb', 'ben', 'hebt', 'bent', 'hebben', 'zijn', 'geweest', 'gehad', 'gezien', 'gedaan', 'gegaan', 'gekomen', 'gebleven', 'geworden', 'gezet', 'gelopen', 'gereden'];
+            const found = [];
+            const woorden = tekst.toLowerCase().split(/\s+/);
+            woorden.forEach(w => {
+                const clean = w.replace(/[.,!?;:]/, '');
+                if (vvtWoorden.includes(clean) || clean.startsWith('ge')) {
+                    if (!found.includes(w)) found.push(w);
+                }
+            });
+            if (found.length > 0) {
+                ovtToonStatus(`⚠️ Mogelijke VVT-vormen gevonden: ${found.join(', ')}. Let op: gebruik OVT!`, 'error');
+            } else {
+                ovtToonStatus('✅ Geen duidelijke VVT-vormen gevonden. Kijk wel of je de juiste verleden tijd hebt gebruikt.', 'success');
+            }
+        };
+
+        window.ovtWisAntwoord = function() {
+            if (!confirm('Weet je zeker dat je jouw antwoord wilt wissen?')) return;
+            remove(ref(db, `classes/${window.currentClass}/ovt-herschrijven/${window.userName}`))
+                .then(() => {
+                    ovtTextarea.value = '';
+                    ovtToonStatus('Antwoord gewist.', 'success');
+                })
+                .catch(err => ovtToonStatus('Fout: ' + err.message, 'error'));
+        };
+
+        function ovtToonStatus(msg, type) {
+            ovtStatus.style.display = 'block';
+            ovtStatus.textContent = msg;
+            ovtStatus.className = 'status-msg ' + type;
+        }
+
+        function ovtLaadFeed() {
+            // OVT heeft geen feed, maar we kunnen de eigen inzending laden als we willen.
+            // Voor nu niets.
+        }
+
+        // ============================================================
+        // ===== PV CAMERABEELDEN =====
+        // ============================================================
+
+        window.cameraStart = function() {
+            const now = new Date();
+            window.cameraStartTime = now.getTime();
+            cameraStatus.innerHTML = `⏱️ Opname gestart om ${now.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}. Vul de PV-bevindingen in.`;
+            pvForm.style.display = 'block';
+            startBtn.disabled = true;
+            startBtn.style.opacity = '0.6';
+            const refInzending = push(ref(db, `classes/${window.currentClass}/camerabeelden`));
+            window.cameraInzendingKey = refInzending.key;
+            set(refInzending, {
+                user: window.userName,
+                startTime: window.cameraStartTime,
+                status: 'gestart',
+                timestamp: now.toISOString()
+            }).catch(err => console.error(err));
+        };
+
+        window.cameraOpslaan = function() {
+            if (!window.cameraInzendingKey) {
+                alert("Start eerst de opname!");
+                return;
+            }
+            const kleur = document.getElementById('kleur').value.trim();
+            const materiaal = document.getElementById('materiaal').value.trim();
+            const vorm = document.getElementById('vorm').value.trim();
+            const loop = document.getElementById('loop').value.trim();
+            const magazijn = document.getElementById('magazijn').value.trim();
+            const kolf = document.getElementById('kolf').value.trim();
+            const opmerkingen = document.getElementById('opmerkingen').value.trim();
+
+            if (!kleur || !materiaal || !vorm || !loop || !magazijn || !kolf) {
+                alert("Vul alle verplichte velden in (kleur, materiaal, vorm, loop, magazijn, kolf).");
+                return;
+            }
+
+            const now = new Date();
+            const data = {
+                kleur,
+                materiaal,
+                vorm,
+                loop,
+                magazijn,
+                kolf,
+                opmerkingen,
+                eindTijd: now.getTime(),
+                eindTijdStr: now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                status: 'voltooid',
+                timestamp: now.toISOString()
+            };
+
+            set(ref(db, `classes/${window.currentClass}/camerabeelden/${window.cameraInzendingKey}`), data)
+                .then(() => {
+                    alert("✅ PV opgeslagen!");
+                    pvForm.reset();
+                    cameraStatus.innerHTML = "PV opgeslagen. Je kunt een nieuwe opname starten.";
+                    startBtn.disabled = false;
+                    startBtn.style.opacity = '1';
+                    pvForm.style.display = 'none';
+                    window.cameraInzendingKey = null;
+                })
+                .catch(err => alert("Fout bij opslaan: " + err.message));
+        };
+
+        window.cameraDeleteAll = function() {
+            if (!window.currentClass) return;
+            if (!confirm(`Weet je zeker dat je ALLE PV's voor klas "${window.currentClass}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt!`)) return;
+            remove(ref(db, `classes/${window.currentClass}/camerabeelden`))
+                .then(() => {
+                    alert(`✅ Alle PV's voor klas "${window.currentClass}" zijn verwijderd.`);
+                    cameraFeedContainer.innerHTML = '<p style="color:#666;">Geen PV\'s meer.</p>';
+                })
+                .catch(err => alert("Fout bij verwijderen: " + err.message));
+        };
+
+        function cameraLaadFeed() {
+            const feedRef = ref(db, `classes/${window.currentClass}/camerabeelden`);
+            onValue(feedRef, (snap) => {
+                cameraFeedContainer.innerHTML = '';
+                const data = snap.val();
+                if (!data) {
+                    cameraFeedContainer.innerHTML = '<p style="color:#666;">Nog geen PV\'s ingevuld.</p>';
+                    return;
+                }
+                const keys = Object.keys(data).sort((a, b) => (data[b].startTime || 0) - (data[a].startTime || 0));
+                keys.forEach(key => {
+                    const item = data[key];
+                    if (item.status !== 'voltooid') return;
+                    const div = document.createElement('div');
+                    div.className = 'feed-item';
+                    const startDatum = item.startTime ? new Date(item.startTime).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '?';
+                    const eind = item.eindTijdStr || '';
+                    div.innerHTML = `
+                        <div class="meta"><strong>${item.user}</strong> · start ${startDatum} · eind ${eind}</div>
+                        <div class="details">
+                            <strong>Kleur:</strong> ${item.kleur} · <strong>Materiaal:</strong> ${item.materiaal} · <strong>Vorm:</strong> ${item.vorm}<br>
+                            <strong>Loop:</strong> ${item.loop} · <strong>Magazijn:</strong> ${item.magazijn} · <strong>Kolf:</strong> ${item.kolf}
+                            ${item.opmerkingen ? `<br><em>Opmerkingen:</em> ${item.opmerkingen}` : ''}
+                        </div>
+                    `;
+                    cameraFeedContainer.appendChild(div);
+                });
+            });
+        }
+
+        console.log("Gecombineerde les geladen met nieuwe Firebase.");
+    </script>
+</body>
+</html>
